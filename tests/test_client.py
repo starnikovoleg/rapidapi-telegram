@@ -48,7 +48,7 @@ def _err(status, message="boom"):
 
 
 def test_resolve_username_sends_expected_request():
-    transport = FakeTransport([_ok({"Peer": {}, "Chats": [], "Users": None})])
+    transport = FakeTransport([_ok({"peer": {}, "chats": [], "users": None})])
     client = TelegramClient(api_key="k", transport=transport)
 
     client.resolve_username("@durov")
@@ -63,7 +63,7 @@ def test_resolve_username_sends_expected_request():
 
 
 def test_base_url_overrides_host():
-    transport = FakeTransport([_ok({"Peer": {}})])
+    transport = FakeTransport([_ok({"peer": {}})])
     client = TelegramClient(
         api_key="k", base_url="http://localhost:9090", transport=transport
     )
@@ -125,8 +125,8 @@ def test_unknown_status_maps_to_base_error():
 
 
 def test_get_channel_by_username_chains_correctly():
-    resolve_envelope = {"Peer": {"ChannelID": 1006503122}}
-    channel_body = {"FullChat": {"ID": 1006503122}, "Chats": [], "Users": None}
+    resolve_envelope = {"peer": {"channel_id": 1006503122}}
+    channel_body = {"full_chat": {"id": 1006503122}, "chats": [], "users": None}
     transport = FakeTransport([_ok(resolve_envelope), _ok(channel_body)])
     client = TelegramClient(api_key="k", transport=transport)
 
@@ -139,7 +139,7 @@ def test_get_channel_by_username_chains_correctly():
 
 def test_get_channel_by_username_raises_when_peer_is_a_user():
     """If the resolved peer is a user, the channel helper must raise NotFound."""
-    envelope = {"Peer": {"UserID": 42}}
+    envelope = {"peer": {"user_id": 42}}
     transport = FakeTransport([_ok(envelope)])
     client = TelegramClient(api_key="k", transport=transport)
     with pytest.raises(NotFoundError):
@@ -147,8 +147,8 @@ def test_get_channel_by_username_raises_when_peer_is_a_user():
 
 
 def test_get_user_by_username_chains_correctly():
-    envelope = {"Peer": {"UserID": 7}}
-    user_body = {"Users": [{"ID": 7, "FirstName": "Alice"}]}
+    envelope = {"peer": {"user_id": 7}}
+    user_body = {"users": [{"id": 7, "first_name": "Alice"}]}
     transport = FakeTransport([_ok(envelope), _ok(user_body)])
     client = TelegramClient(api_key="k", transport=transport)
     assert client.get_user_by_username("alice") == user_body
@@ -156,8 +156,8 @@ def test_get_user_by_username_chains_correctly():
 
 
 def test_get_history_by_username_passes_kwargs():
-    envelope = {"Peer": {"ChannelID": 99}}
-    transport = FakeTransport([_ok(envelope), _ok({"Messages": []})])
+    envelope = {"peer": {"channel_id": 99}}
+    transport = FakeTransport([_ok(envelope), _ok({"messages": []})])
     client = TelegramClient(api_key="k", transport=transport)
     client.get_history_by_username("news", limit=50, offset_id=100)
     assert transport.calls[1]["url"].endswith("/v1/peers/99/history")

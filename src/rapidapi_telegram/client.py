@@ -263,17 +263,17 @@ def _unwrap(resp: Response) -> Any:
 
 def _channel_id(env: Any) -> Optional[int]:
     """Extract a channel id from a resolve_username envelope, if any."""
-    return _peer_field(env, "ChannelID")
+    return _peer_field(env, "channel_id")
 
 
 def _user_id(env: Any) -> Optional[int]:
     """Extract a user id from a resolve_username envelope, if any."""
-    return _peer_field(env, "UserID")
+    return _peer_field(env, "user_id")
 
 
 def _any_peer_id(env: Any) -> Optional[int]:
     """Extract whichever peer id is present (channel / user / chat)."""
-    for key in ("ChannelID", "UserID", "ChatID"):
+    for key in ("channel_id", "user_id", "chat_id"):
         pid = _peer_field(env, key)
         if pid is not None:
             return pid
@@ -283,7 +283,7 @@ def _any_peer_id(env: Any) -> Optional[int]:
 def _peer_field(env: Any, key: str) -> Optional[int]:
     if not isinstance(env, dict):
         return None
-    peer = env.get("Peer")
+    peer = env.get("peer")
     if not isinstance(peer, dict):
         return None
     val = peer.get(key)
