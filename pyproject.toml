@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rapidapi-telegram"
+dynamic = ["version"]
+description = "Python client for the Telegram metadata API on RapidAPI."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+authors = [{ name = "oleg" }]
+keywords = ["telegram", "rapidapi", "client", "api"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = ["requests>=2.28"]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.urls]
+Homepage = "https://github.com/oleg/rapidapi-telegram"
+Issues = "https://github.com/oleg/rapidapi-telegram/issues"
+
+[tool.hatch.version]
+path = "src/rapidapi_telegram/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rapidapi_telegram"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "src/rapidapi_telegram",
+  "examples",
+  "tests",
+  "README.md",
+  "LICENSE",
+]
