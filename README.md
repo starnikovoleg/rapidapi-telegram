@@ -32,8 +32,11 @@ channel = client.get_channel_by_username("telegram")
 print(channel)
 ```
 
-The client sends `X-RapidAPI-Key` and `X-RapidAPI-Host` on every request.
-Subscribe to the API on RapidAPI Hub and grab your key from the dashboard.
+The client sends `X-RapidAPI-Key` and `X-RapidAPI-Host` on every request and
+defaults to `telegram-public-api.p.rapidapi.com`. Subscribe to the API on
+RapidAPI Hub and grab your key from the dashboard. Override the host with
+`TelegramClient(api_key=..., api_host="...")` if you're pointing at a
+different listing.
 
 ## Methods
 

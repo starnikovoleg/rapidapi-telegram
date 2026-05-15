@@ -16,7 +16,7 @@ from urllib.parse import quote
 from . import errors
 from .transport import RequestsTransport, Response, Transport
 
-DEFAULT_API_HOST = "telegram-metadata.p.rapidapi.com"
+DEFAULT_API_HOST = "telegram-public-api.p.rapidapi.com"
 DEFAULT_TIMEOUT = 30.0
 
 
@@ -186,45 +186,41 @@ class TelegramClient:
 
     def get_channel_by_username(self, username: str) -> dict:
         """Resolve ``username`` and fetch the full channel in one call."""
-        env = self.resolve_username(username)
-        peer = _pick_peer(env, username=username, type_="channel")
-        if peer is None:
+        channel_id = _channel_id(self.resolve_username(username))
+        if channel_id is None:
             raise errors.NotFoundError(
                 f"no channel found for username {username!r}", status_code=404
             )
-        return self.get_channel(int(peer["id"]))
+        return self.get_channel(channel_id)
 
     def get_user_by_username(self, username: str) -> dict:
         """Resolve ``username`` and fetch the full user profile in one call."""
-        env = self.resolve_username(username)
-        peer = _pick_peer(env, username=username, type_="user")
-        if peer is None:
+        user_id = _user_id(self.resolve_username(username))
+        if user_id is None:
             raise errors.NotFoundError(
                 f"no user found for username {username!r}", status_code=404
             )
-        return self.get_user(int(peer["id"]))
+        return self.get_user(user_id)
 
     def get_history_by_username(self, username: str, **kwargs: Any) -> dict:
         """Resolve ``username`` and fetch its message history in one call."""
-        env = self.resolve_username(username)
-        peer = _pick_peer_any(env, username=username)
-        if peer is None:
+        peer_id = _any_peer_id(self.resolve_username(username))
+        if peer_id is None:
             raise errors.NotFoundError(
                 f"no peer found for username {username!r}", status_code=404
             )
-        return self.get_history(int(peer["id"]), **kwargs)
+        return self.get_history(peer_id, **kwargs)
 
     def get_channel_messages_by_username(
         self, username: str, ids: Iterable[int]
     ) -> dict:
         """Resolve a channel ``username`` and fetch specific messages from it."""
-        env = self.resolve_username(username)
-        peer = _pick_peer(env, username=username, type_="channel")
-        if peer is None:
+        channel_id = _channel_id(self.resolve_username(username))
+        if channel_id is None:
             raise errors.NotFoundError(
                 f"no channel found for username {username!r}", status_code=404
             )
-        return self.get_channel_messages(int(peer["id"]), ids)
+        return self.get_channel_messages(channel_id, ids)
 
     # ------------------------------------------------------------------
     # Internals
@@ -265,28 +261,35 @@ def _unwrap(resp: Response) -> Any:
     raise errors.from_status(resp.status_code, msg)
 
 
-def _pick_peer(env: Any, *, username: str, type_: str) -> Optional[dict]:
-    """Find a peer in the envelope matching both ``username`` and ``type_``."""
-    target = (username or "").lstrip("@").lower()
-    for p in _iter_peers(env):
-        if p.get("type") == type_ and (p.get("username") or "").lower() == target:
-            return p
+def _channel_id(env: Any) -> Optional[int]:
+    """Extract a channel id from a resolve_username envelope, if any."""
+    return _peer_field(env, "ChannelID")
+
+
+def _user_id(env: Any) -> Optional[int]:
+    """Extract a user id from a resolve_username envelope, if any."""
+    return _peer_field(env, "UserID")
+
+
+def _any_peer_id(env: Any) -> Optional[int]:
+    """Extract whichever peer id is present (channel / user / chat)."""
+    for key in ("ChannelID", "UserID", "ChatID"):
+        pid = _peer_field(env, key)
+        if pid is not None:
+            return pid
     return None
 
 
-def _pick_peer_any(env: Any, *, username: str) -> Optional[dict]:
-    """Find the first peer in the envelope matching ``username`` regardless of type."""
-    target = (username or "").lstrip("@").lower()
-    for p in _iter_peers(env):
-        if (p.get("username") or "").lower() == target:
-            return p
-    return None
-
-
-def _iter_peers(env: Any) -> Iterable[dict]:
+def _peer_field(env: Any, key: str) -> Optional[int]:
     if not isinstance(env, dict):
-        return ()
-    peers = env.get("peers")
-    if isinstance(peers, list):
-        return (p for p in peers if isinstance(p, dict))
-    return ()
+        return None
+    peer = env.get("Peer")
+    if not isinstance(peer, dict):
+        return None
+    val = peer.get(key)
+    if val in (None, 0):
+        return None
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return None
